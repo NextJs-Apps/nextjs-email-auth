@@ -1,18 +1,23 @@
 'use server'
 
 import { verifySession } from '@/lib/session'
-import { taintUniqueValue } from 'next/dist/server/app-render/rsc/taint'
+// import { taintUniqueValue } from 'next/dist/server/app-render/rsc/taint'
 import prisma from '@/lib/prisma'
 import { cache } from 'react'
+import { redirect } from 'next/navigation'
 
 export const getUser = cache(async () => {
   // Verify user's session
-  const session = await verifySession()
+  const {userId} = await verifySession()
+
+  if(!userId) {
+    redirect('/login')
+  }
 
   // Fetch user data
   const user = await prisma.User.findUnique({
     where: {
-      id: session.userId,
+      id: userId,
     },
   })
 

@@ -2,15 +2,44 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { LogoutButton } from './logout-button'
 import { verifySession } from '@/lib/session'
-
+import { getUser } from '@/data/user'
 
 export default async function Navbar() {
-  const session = await verifySession()
-  
-
+  const { userId } = await verifySession()
+  console.log("ID:", userId)
+  if (userId) {
+    return <LoggenInNavbar />
+  }
+  return <DefaultNavbar />
 }
-function DefaultNavbar() {}
-function LoggenInNavbar() {
+function DefaultNavbar() {
+  return (
+    <header className='flex items-center justify-between px-20 py-3 bg-background border-b'>
+      <div className='flex items-center justify-center gap-2 text-sm font-medium text-foreground'>
+        <Button size='sm' className='flex items-center gap-2'>
+          <Link
+            href='/login'
+            className='inline-flex items-center gap-2'
+            prefetch={false}
+          >
+            Login
+          </Link>
+        </Button>
+        <Button size='sm' className='flex items-center gap-2'>
+          <Link
+            href='/signup'
+            className='inline-flex items-center gap-2'
+            prefetch={false}
+          >
+            SignUp
+          </Link>
+        </Button>
+      </div>
+    </header>
+  )
+}
+async function LoggenInNavbar() {
+  const { firstName, lastName } = await getUser()
   return (
     <header className='flex items-center justify-between px-20 py-3 bg-background border-b'>
       <div className='flex items-center justify-center gap-2 text-sm font-medium text-foreground'>
@@ -33,12 +62,11 @@ function LoggenInNavbar() {
           </Link>
         </Button>
         <LogoutButton />
-        
       </div>
       <div className='flex items-center gap-2 text-sm font-medium text-muted-foreground'>
-          <UserIcon className='w-5 h-5' />
-          John Doe
-        </div>
+        <UserIcon className='w-5 h-5' />
+        {firstName} {lastName}
+      </div>
     </header>
   )
 }
