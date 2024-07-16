@@ -1,41 +1,51 @@
-import { verifySession } from '@/lib/session'
-import { taintUniqueValue } from 'next/dist/server/app-render/rsc/taint'
-//import {db}
-// import {users} from '/schema
-import { cache } from 'react'
+'use server'
 
-export const getUser = cache(async () => {
-  // Verify user's session
-  const session = await verifySession()
+import bcrypt from 'bcrypt'
+import prisma from '@/lib/prisma'
+import { createSession } from '@/lib/session'
+import { redirect } from 'next/navigation'
 
-  // Fetch user data
-  const data = await db.query.users.findMany({
-    where: eq(users.id, session.userId),
-    // columns: {firstName: true, lastName: true, email: true}
-  })
-  const user = data[0]
+export async function login(state, formData) {
 
-  return user
-  // filter user data
-  // const filteredUser = userDTO(user)
-  // return filteredUser
-})
-
-function userDTO(user) {
-  taintUniqueValue(
-    'Do not pass a user session token to the client.',
-    user,
-    user.session.token
-  )
-  return {
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    session: user.session,
-    auditTrail: canViewAudit(user.auditTrail, user.role)
+  //validate
+  const email = formData.get('email')
+  const password = formData.get('password')
+  if (!email) {
+    return {
+      errors: { email: ['Empty email field'] },
+    }
   }
-}
+  if (!password) {
+    return {
+      errors: { password: ['Empty password field'] },
+    }
+  }
 
-function canViewAudit(auditTrail, role) {
-  return role === 'admin' ? auditTrail : null
+  // get email user
+  const user = await prisma.user.findUnique({
+    where: {
+      email: email,
+    },
+    select: {
+      email: true,
+      id: true,
+      password: true,
+    },
+  })
+  // User not found
+  if (!user) {
+    return {
+      errors: { email: 'Invalid email id' },
+    }
+  }
+  const isPasswordValid = await bcrypt.compare(password, user.password)
+  // Verify user
+  if (!isPasswordValid) {
+    // Incorrect password
+    return {
+      errors: {password: 'Incorrect password' },
+    }
+  }
+  //create session
+  await createSession(user.id)
 }
