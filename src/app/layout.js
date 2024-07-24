@@ -1,7 +1,6 @@
 import { Inter } from "next/font/google";
 import { cn } from '@/lib/utils'
 import "./globals.css";
-import { LogoutButton } from '@/components/component/logout-button'
 import Navbar from '@/components/component/navbar'
 
 const inter = Inter({ subsets: ["latin"] });
